@@ -5,280 +5,379 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard — UploadPass</title>
     <style>
+        :root {
+            --bg: #050505;
+            --nav-bg: #0a0a0c;
+            --card: #111113;
+            --card-border: #1e1e22;
+            --input-bg: #0a0a0c;
+            --input-border: #252529;
+            --text: #e4e4e7;
+            --text-mid: #a1a1aa;
+            --text-dim: #71717a;
+            --text-faint: #3f3f46;
+            --accent: #818cf8;
+            --accent2: #a78bfa;
+            --green: #4ade80;
+            --danger: #f87171;
+            --radius: 14px;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0a0a;
-            color: #e0e0e0;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
+            min-height: 100dvh;
         }
+
+        /* ---- Nav ---- */
         nav {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 16px 32px;
-            border-bottom: 1px solid #1a1a1a;
-            background: #0f0f0f;
+            padding: 14px 24px;
+            border-bottom: 1px solid #141416;
+            background: var(--nav-bg);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
         }
-        nav h1 {
-            font-size: 20px;
+        .nav-brand {
+            font-size: 18px;
             font-weight: 700;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            letter-spacing: -0.3px;
         }
-        nav a {
-            color: #888;
+        .nav-links { display: flex; gap: 4px; align-items: center; }
+        .nav-links a {
+            color: var(--text-dim);
             text-decoration: none;
-            font-size: 14px;
-            padding: 8px 16px;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-        nav a:hover { color: #e0e0e0; background: #1a1a1a; }
-        .container {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 0 24px;
-        }
-        .section-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #ccc;
-        }
-        .card {
-            background: #161616;
-            border: 1px solid #252525;
-            border-radius: 16px;
-            padding: 32px;
-            margin-bottom: 32px;
-        }
-        label {
-            display: block;
             font-size: 13px;
             font-weight: 500;
-            color: #888;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        textarea, input[type="password"] {
-            width: 100%;
-            padding: 14px 16px;
-            background: #0f0f0f;
-            border: 1px solid #2a2a2a;
+            padding: 8px 14px;
             border-radius: 10px;
-            color: #e0e0e0;
-            font-size: 15px;
-            font-family: inherit;
-            outline: none;
-            transition: border-color 0.2s;
-            resize: vertical;
+            transition: all 0.2s;
+            white-space: nowrap;
         }
-        textarea { min-height: 120px; }
-        textarea:focus, input[type="password"]:focus {
-            border-color: #6366f1;
+        .nav-links a:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+        .nav-links a svg { width: 15px; height: 15px; vertical-align: -2px; margin-right: 4px; }
+
+        /* ---- Layout ---- */
+        .container {
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 32px 20px 60px;
         }
-        .form-group { margin-bottom: 20px; }
-        button, .btn {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            border: none;
-            border-radius: 10px;
-            color: white;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s, transform 0.1s;
-            text-decoration: none;
-            display: inline-block;
-        }
-        button:hover, .btn:hover { opacity: 0.9; }
-        button:active, .btn:active { transform: scale(0.98); }
-        .paste-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .paste-item {
-            background: #111;
-            border: 1px solid #222;
+
+        /* ---- Flash ---- */
+        .flash {
+            padding: 13px 18px;
             border-radius: 12px;
-            padding: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 24px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            gap: 10px;
+            animation: fadeUp 0.4s ease;
+        }
+        .flash svg { width: 18px; height: 18px; flex-shrink: 0; }
+        .flash-success {
+            background: rgba(74,222,128,0.08);
+            border: 1px solid rgba(74,222,128,0.18);
+            color: var(--green);
+        }
+        .flash-error {
+            background: rgba(248,113,113,0.08);
+            border: 1px solid rgba(248,113,113,0.18);
+            color: var(--danger);
+        }
+
+        /* ---- Section ---- */
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-mid);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            padding: 28px;
+            margin-bottom: 36px;
+            animation: fadeUp 0.4s ease;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ---- Form ---- */
+        .form-group { margin-bottom: 18px; }
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        textarea, input[type="password"], input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            resize: vertical;
+        }
+        textarea { min-height: 110px; line-height: 1.6; }
+        textarea:focus, input[type="password"]:focus, input[type="text"]:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(129,140,248,0.08);
+        }
+        textarea::placeholder, input::placeholder { color: var(--text-faint); }
+
+        /* ---- Buttons ---- */
+        .btn-primary {
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+            letter-spacing: 0.2px;
+        }
+        .btn-primary:hover { box-shadow: 0 4px 20px rgba(99,102,241,0.25); }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-ghost {
+            background: none;
+            border: 1px solid var(--input-border);
+            color: var(--text-dim);
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 500;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-ghost:hover { border-color: var(--accent); color: var(--accent); background: rgba(129,140,248,0.06); }
+        .btn-ghost-danger:hover { border-color: var(--danger); color: var(--danger); background: rgba(248,113,113,0.06); }
+        .btn-cancel {
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            color: var(--text-mid);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-cancel:hover { background: rgba(255,255,255,0.07); }
+
+        /* ---- Paste list ---- */
+        .paste-list { display: flex; flex-direction: column; gap: 10px; }
+        .paste-item {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid #1a1a1e;
+            border-radius: 14px;
+            padding: 18px 20px;
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            align-items: center;
             gap: 16px;
             transition: border-color 0.2s;
         }
-        .paste-item:hover { border-color: #333; }
-        .paste-info { flex: 1; min-width: 0; }
+        .paste-item:hover { border-color: #28282e; }
+        .paste-info { min-width: 0; }
         .paste-content {
             font-size: 14px;
-            color: #ccc;
+            color: var(--text-mid);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
+            line-height: 1.5;
         }
-        .paste-meta {
+        .paste-meta { font-size: 11px; color: var(--text-faint); letter-spacing: 0.2px; }
+        .paste-code {
+            font-family: 'SF Mono', 'Fira Code', Monaco, monospace;
             font-size: 12px;
-            color: #555;
-        }
-        .paste-link {
-            font-family: 'SF Mono', Monaco, monospace;
-            font-size: 12px;
-            color: #6366f1;
-            background: rgba(99, 102, 241, 0.1);
-            padding: 6px 12px;
-            border-radius: 6px;
-            word-break: break-all;
+            color: var(--accent);
+            background: rgba(129,140,248,0.08);
+            padding: 7px 14px;
+            border-radius: 8px;
             cursor: pointer;
             transition: background 0.2s;
             text-decoration: none;
+            white-space: nowrap;
         }
-        .paste-link:hover { background: rgba(99, 102, 241, 0.2); }
-        .btn-danger {
-            background: transparent;
-            border: 1px solid #333;
-            color: #888;
-            padding: 8px 14px;
-            font-size: 13px;
-            border-radius: 8px;
-        }
-        .btn-danger:hover { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.1); }
-        .btn-sm {
-            background: transparent;
-            border: 1px solid #333;
-            color: #888;
-            padding: 8px 14px;
-            font-size: 13px;
-            border-radius: 8px;
-        }
-        .btn-sm:hover { border-color: #6366f1; color: #6366f1; background: rgba(99,102,241,0.1); }
+        .paste-code:hover { background: rgba(129,140,248,0.15); }
+        .paste-actions { display: flex; gap: 6px; align-items: center; }
         .empty {
             text-align: center;
-            color: #444;
-            padding: 40px;
-            font-size: 15px;
-        }
-        .copy-toast {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: #6366f1;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 10px;
+            color: var(--text-faint);
+            padding: 48px 20px;
             font-size: 14px;
-            font-weight: 500;
-            opacity: 0;
-            transform: translateY(10px);
-            transition: all 0.3s;
-            pointer-events: none;
-            z-index: 1000;
+            line-height: 1.6;
         }
-        .copy-toast.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        .flash {
-            padding: 14px 20px;
-            border-radius: 10px;
-            font-size: 14px;
-            margin-bottom: 24px;
-            text-align: center;
-        }
-        .flash-success {
-            background: rgba(34, 197, 94, 0.1);
-            border: 1px solid rgba(34, 197, 94, 0.3);
-            color: #22c55e;
-        }
-        .flash-error {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #ef4444;
-        }
+        .empty svg { width: 40px; height: 40px; margin-bottom: 14px; opacity: 0.3; }
+
+        /* ---- Modal ---- */
         .modal-overlay {
             display: none;
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.7);
-            z-index: 100;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 200;
             align-items: center;
             justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.2s ease;
         }
         .modal-overlay.active { display: flex; }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
         .modal {
-            background: #161616;
-            border: 1px solid #252525;
-            border-radius: 16px;
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
             padding: 32px;
             width: 100%;
-            max-width: 420px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            max-width: 400px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+            animation: modalUp 0.3s ease;
+        }
+        @keyframes modalUp {
+            from { opacity: 0; transform: translateY(20px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
         .modal h3 {
-            font-size: 18px;
+            font-size: 17px;
+            font-weight: 700;
             margin-bottom: 20px;
-            color: #e0e0e0;
+            color: var(--text);
         }
-        .modal-actions {
+        .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
+        .modal-code {
+            color: var(--text-dim);
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+        .modal-code code {
+            color: var(--accent);
+            background: rgba(129,140,248,0.08);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 12px;
+        }
+
+        /* ---- Toast ---- */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            color: var(--green);
+            padding: 12px 22px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 500;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+            z-index: 1000;
             display: flex;
-            gap: 12px;
-            margin-top: 20px;
-        }
-        .btn-cancel {
-            padding: 12px 24px;
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 10px;
-            color: #ccc;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .btn-cancel:hover { background: #222; }
-        .paste-actions {
-            display: flex;
-            gap: 8px;
             align-items: center;
-            flex-shrink: 0;
+            gap: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
         }
-        .settings-row {
-            display: flex;
-            gap: 12px;
-            align-items: flex-end;
+        .toast svg { width: 16px; height: 16px; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* ---- Responsive ---- */
+        @media (max-width: 640px) {
+            nav { padding: 12px 16px; }
+            .nav-links a { padding: 7px 10px; font-size: 12px; }
+            .nav-links a svg { display: none; }
+            .container { padding: 24px 16px 48px; }
+            .card { padding: 20px; border-radius: 14px; }
+            .section-title { font-size: 13px; }
+
+            .paste-item {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                padding: 16px;
+            }
+            .paste-code {
+                justify-self: start;
+                font-size: 11px;
+            }
+            .paste-actions {
+                justify-self: start;
+            }
+            .modal { padding: 24px; border-radius: 16px; }
+            .modal-actions { flex-direction: column; }
+            .modal-actions button, .modal-actions .btn-cancel { width: 100%; text-align: center; }
         }
-        .settings-row .form-group { flex: 1; margin-bottom: 0; }
-        input[type="text"] {
-            width: 100%;
-            padding: 14px 16px;
-            background: #0f0f0f;
-            border: 1px solid #2a2a2a;
-            border-radius: 10px;
-            color: #e0e0e0;
-            font-size: 15px;
-            font-family: inherit;
-            outline: none;
-            transition: border-color 0.2s;
+        @media (max-width: 380px) {
+            .nav-brand { font-size: 16px; }
+            .card { padding: 16px; }
+            .paste-actions { flex-wrap: wrap; }
         }
-        input[type="text"]:focus { border-color: #6366f1; }
     </style>
 </head>
 <body>
     <nav>
-        <h1>UploadPass</h1>
-        <div>
-            <a href="#" onclick="openModal('adminPwModal'); return false;">Change Admin Password</a>
-            <a href="/admin/logout">Sign Out</a>
+        <span class="nav-brand">UploadPass</span>
+        <div class="nav-links">
+            <a href="#" onclick="openModal('adminPwModal'); return false;">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+                Settings</a>
+            <a href="/admin/logout">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                Sign Out</a>
         </div>
     </nav>
 
     <div class="container">
-        {{if .Success}}<div class="flash flash-success">{{.Success}}</div>{{end}}
-        {{if .Error}}<div class="flash flash-error">{{.Error}}</div>{{end}}
+        {{if .Success}}
+        <div class="flash flash-success">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            {{.Success}}
+        </div>
+        {{end}}
+        {{if .Error}}
+        <div class="flash flash-error">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            {{.Error}}
+        </div>
+        {{end}}
 
         <h2 class="section-title">Create New Link</h2>
         <div class="card">
@@ -291,7 +390,7 @@
                     <label for="password">Access Password</label>
                     <input type="password" id="password" name="password" placeholder="Password to unlock this text" required>
                 </div>
-                <button type="submit">Generate Link</button>
+                <button type="submit" class="btn-primary">Generate Link</button>
             </form>
         </div>
 
@@ -303,21 +402,24 @@
                 <div class="paste-item">
                     <div class="paste-info">
                         <div class="paste-content">{{.Content}}</div>
-                        <div class="paste-meta">Created: {{.CreatedAt}}</div>
+                        <div class="paste-meta">{{.CreatedAt}}</div>
                     </div>
-                    <a class="paste-link" href="{{$.BaseURL}}/s/{{.Code}}" onclick="copyLink(event, '{{$.BaseURL}}/s/{{.Code}}')" title="Click to copy">{{.Code}}</a>
+                    <a class="paste-code" href="{{$.BaseURL}}/s/{{.Code}}" onclick="copyLink(event, '{{$.BaseURL}}/s/{{.Code}}')" title="Click to copy link">{{.Code}}</a>
                     <div class="paste-actions">
-                        <button type="button" class="btn-sm" onclick="openChangePw('{{.Code}}')">Change Password</button>
+                        <button type="button" class="btn-ghost" onclick="openChangePw('{{.Code}}')">Change PW</button>
                         <form method="POST" action="/admin/delete" style="margin:0">
                             <input type="hidden" name="code" value="{{.Code}}">
-                            <button type="submit" class="btn-danger" onclick="return confirm('Delete this link?')">Delete</button>
+                            <button type="submit" class="btn-ghost btn-ghost-danger" onclick="return confirm('Delete this link?')">Delete</button>
                         </form>
                     </div>
                 </div>
                 {{end}}
             </div>
             {{else}}
-            <div class="empty">No links created yet. Create your first one above.</div>
+            <div class="empty">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.07-9.07l4.5-4.5a4.5 4.5 0 016.364 6.364l-1.757 1.757"/></svg>
+                <div>No links yet. Create your first one above.</div>
+            </div>
             {{end}}
         </div>
     </div>
@@ -340,7 +442,7 @@
                     <input type="password" name="confirm_password" placeholder="Confirm new password" required>
                 </div>
                 <div class="modal-actions">
-                    <button type="submit">Update Password</button>
+                    <button type="submit" class="btn-primary">Update Password</button>
                     <button type="button" class="btn-cancel" onclick="closeModals()">Cancel</button>
                 </div>
             </form>
@@ -351,7 +453,7 @@
     <div class="modal-overlay" id="linkPwModal" onclick="if(event.target===this)closeModals()">
         <div class="modal">
             <h3>Change Link Password</h3>
-            <p style="color:#666;font-size:14px;margin-bottom:20px">Code: <code id="linkPwCode" style="color:#6366f1"></code></p>
+            <p class="modal-code">Link code: <code id="linkPwCode"></code></p>
             <form method="POST" action="/admin/change-link-password">
                 <input type="hidden" name="code" id="linkPwCodeInput">
                 <div class="form-group">
@@ -359,29 +461,28 @@
                     <input type="password" name="new_password" id="linkPwInput" placeholder="Enter new password" required>
                 </div>
                 <div class="modal-actions">
-                    <button type="submit">Update Password</button>
+                    <button type="submit" class="btn-primary">Update Password</button>
                     <button type="button" class="btn-cancel" onclick="closeModals()">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div class="copy-toast" id="toast">Link copied!</div>
+    <div class="toast" id="toast">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        Link copied!
+    </div>
 
     <script>
         function copyLink(e, link) {
             e.preventDefault();
             navigator.clipboard.writeText(link);
-            const toast = document.getElementById('toast');
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2000);
+            const t = document.getElementById('toast');
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2200);
         }
-        function openModal(id) {
-            document.getElementById(id).classList.add('active');
-        }
-        function closeModals() {
-            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
-        }
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModals() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active')); }
         function openChangePw(code) {
             document.getElementById('linkPwCode').textContent = code;
             document.getElementById('linkPwCodeInput').value = code;

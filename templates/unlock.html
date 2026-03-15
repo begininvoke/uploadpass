@@ -5,107 +5,196 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Unlock — UploadPass</title>
     <style>
+        :root {
+            --bg: #050505;
+            --card: #111113;
+            --card-border: #1e1e22;
+            --input-bg: #0a0a0c;
+            --input-border: #252529;
+            --text: #e4e4e7;
+            --text-dim: #71717a;
+            --accent: #818cf8;
+            --accent2: #a78bfa;
+            --danger: #f87171;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0a0a;
-            color: #e0e0e0;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 20px;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at 40% 30%, rgba(99,102,241,0.06) 0%, transparent 50%);
+            pointer-events: none;
         }
         .card {
-            background: #161616;
-            border: 1px solid #252525;
-            border-radius: 16px;
-            padding: 48px;
+            position: relative;
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 44px 40px;
             width: 100%;
-            max-width: 420px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            max-width: 400px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.6);
+            animation: fadeUp 0.5s ease;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .icon {
-            width: 64px;
-            height: 64px;
-            background: rgba(99, 102, 241, 0.15);
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.12));
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 24px;
-            font-size: 28px;
+            margin: 0 auto 22px;
         }
+        .icon svg { width: 26px; height: 26px; color: var(--accent); }
         h2 {
             text-align: center;
-            font-size: 22px;
+            font-size: 21px;
             font-weight: 700;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
+            letter-spacing: -0.3px;
         }
         .subtitle {
             text-align: center;
-            color: #666;
+            color: var(--text-dim);
             font-size: 14px;
             margin-bottom: 28px;
+            line-height: 1.5;
         }
+        .form-group { margin-bottom: 18px; }
         label {
             display: block;
-            font-size: 13px;
-            font-weight: 500;
-            color: #888;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-dim);
             margin-bottom: 8px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
+        }
+        .input-wrap { position: relative; }
+        .input-wrap svg {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            color: #3f3f46;
+            pointer-events: none;
         }
         input[type="password"] {
             width: 100%;
-            padding: 14px 16px;
-            background: #0f0f0f;
-            border: 1px solid #2a2a2a;
-            border-radius: 10px;
-            color: #e0e0e0;
-            font-size: 16px;
+            padding: 13px 16px 13px 42px;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 14px;
+            color: var(--text);
+            font-size: 15px;
             outline: none;
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-        input[type="password"]:focus { border-color: #6366f1; }
+        input[type="password"]:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(129,140,248,0.1);
+        }
         button {
             width: 100%;
-            padding: 14px;
-            margin-top: 24px;
+            padding: 13px;
+            margin-top: 8px;
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
             border: none;
-            border-radius: 10px;
+            border-radius: 14px;
             color: white;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: opacity 0.2s, transform 0.1s;
+            transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
-        button:hover { opacity: 0.9; }
+        button svg { width: 18px; height: 18px; }
+        button:hover { box-shadow: 0 4px 20px rgba(99,102,241,0.3); }
         button:active { transform: scale(0.98); }
         .error {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #ef4444;
+            background: rgba(248,113,113,0.08);
+            border: 1px solid rgba(248,113,113,0.2);
+            color: var(--danger);
             padding: 12px 16px;
-            border-radius: 10px;
-            font-size: 14px;
+            border-radius: 12px;
+            font-size: 13px;
             margin-bottom: 20px;
             text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .error svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .branding {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #1a1a1e;
+        }
+        .branding span {
+            font-size: 12px;
+            font-weight: 600;
+            color: #27272a;
+            letter-spacing: 0.5px;
+        }
+
+        @media (max-width: 480px) {
+            .card { padding: 32px 24px; border-radius: 16px; }
         }
     </style>
 </head>
 <body>
     <div class="card">
-        <div class="icon">&#128274;</div>
+        <div class="icon">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        </div>
         <h2>Protected Content</h2>
-        <p class="subtitle">Enter the password to view this text</p>
-        {{if .Error}}<div class="error">{{.Error}}</div>{{end}}
+        <p class="subtitle">This content is password-protected. Enter the password to continue.</p>
+        {{if .Error}}
+        <div class="error">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+            {{.Error}}
+        </div>
+        {{end}}
         <form method="POST" action="/s/{{.Code}}">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" placeholder="Enter password" autofocus required>
-            <button type="submit">Unlock</button>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-wrap">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                    <input type="password" id="password" name="password" placeholder="Enter password" autofocus required>
+                </div>
+            </div>
+            <button type="submit">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/></svg>
+                Unlock
+            </button>
         </form>
+        <div class="branding"><span>UploadPass</span></div>
     </div>
 </body>
 </html>
