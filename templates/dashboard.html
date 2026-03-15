@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — UploadPass</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 32px;
+            border-bottom: 1px solid #1a1a1a;
+            background: #0f0f0f;
+        }
+        nav h1 {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        nav a {
+            color: #888;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        nav a:hover { color: #e0e0e0; background: #1a1a1a; }
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 24px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #ccc;
+        }
+        .card {
+            background: #161616;
+            border: 1px solid #252525;
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 32px;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #888;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        textarea, input[type="password"] {
+            width: 100%;
+            padding: 14px 16px;
+            background: #0f0f0f;
+            border: 1px solid #2a2a2a;
+            border-radius: 10px;
+            color: #e0e0e0;
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+            resize: vertical;
+        }
+        textarea { min-height: 120px; }
+        textarea:focus, input[type="password"]:focus {
+            border-color: #6366f1;
+        }
+        .form-group { margin-bottom: 20px; }
+        button, .btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        button:hover, .btn:hover { opacity: 0.9; }
+        button:active, .btn:active { transform: scale(0.98); }
+        .paste-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .paste-item {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            transition: border-color 0.2s;
+        }
+        .paste-item:hover { border-color: #333; }
+        .paste-info { flex: 1; min-width: 0; }
+        .paste-content {
+            font-size: 14px;
+            color: #ccc;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 6px;
+        }
+        .paste-meta {
+            font-size: 12px;
+            color: #555;
+        }
+        .paste-link {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 12px;
+            color: #6366f1;
+            background: rgba(99, 102, 241, 0.1);
+            padding: 6px 12px;
+            border-radius: 6px;
+            word-break: break-all;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-decoration: none;
+        }
+        .paste-link:hover { background: rgba(99, 102, 241, 0.2); }
+        .btn-danger {
+            background: transparent;
+            border: 1px solid #333;
+            color: #888;
+            padding: 8px 14px;
+            font-size: 13px;
+            border-radius: 8px;
+        }
+        .btn-danger:hover { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.1); }
+        .btn-sm {
+            background: transparent;
+            border: 1px solid #333;
+            color: #888;
+            padding: 8px 14px;
+            font-size: 13px;
+            border-radius: 8px;
+        }
+        .btn-sm:hover { border-color: #6366f1; color: #6366f1; background: rgba(99,102,241,0.1); }
+        .empty {
+            text-align: center;
+            color: #444;
+            padding: 40px;
+            font-size: 15px;
+        }
+        .copy-toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #6366f1;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        .copy-toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .flash {
+            padding: 14px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        .flash-success {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #22c55e;
+        }
+        .flash-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: #161616;
+            border: 1px solid #252525;
+            border-radius: 16px;
+            padding: 32px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .modal h3 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #e0e0e0;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .btn-cancel {
+            padding: 12px 24px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 10px;
+            color: #ccc;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-cancel:hover { background: #222; }
+        .paste-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .settings-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        .settings-row .form-group { flex: 1; margin-bottom: 0; }
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 16px;
+            background: #0f0f0f;
+            border: 1px solid #2a2a2a;
+            border-radius: 10px;
+            color: #e0e0e0;
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus { border-color: #6366f1; }
+    </style>
+</head>
+<body>
+    <nav>
+        <h1>UploadPass</h1>
+        <div>
+            <a href="#" onclick="openModal('adminPwModal'); return false;">Change Admin Password</a>
+            <a href="/admin/logout">Sign Out</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        {{if .Success}}<div class="flash flash-success">{{.Success}}</div>{{end}}
+        {{if .Error}}<div class="flash flash-error">{{.Error}}</div>{{end}}
+
+        <h2 class="section-title">Create New Link</h2>
+        <div class="card">
+            <form method="POST" action="/admin/create">
+                <div class="form-group">
+                    <label for="content">Text Content</label>
+                    <textarea id="content" name="content" placeholder="Enter your secret text..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="password">Access Password</label>
+                    <input type="password" id="password" name="password" placeholder="Password to unlock this text" required>
+                </div>
+                <button type="submit">Generate Link</button>
+            </form>
+        </div>
+
+        <h2 class="section-title">Your Links</h2>
+        <div class="card">
+            {{if .Pastes}}
+            <div class="paste-list">
+                {{range .Pastes}}
+                <div class="paste-item">
+                    <div class="paste-info">
+                        <div class="paste-content">{{.Content}}</div>
+                        <div class="paste-meta">Created: {{.CreatedAt}}</div>
+                    </div>
+                    <a class="paste-link" href="{{$.BaseURL}}/s/{{.Code}}" onclick="copyLink(event, '{{$.BaseURL}}/s/{{.Code}}')" title="Click to copy">{{.Code}}</a>
+                    <div class="paste-actions">
+                        <button type="button" class="btn-sm" onclick="openChangePw('{{.Code}}')">Change Password</button>
+                        <form method="POST" action="/admin/delete" style="margin:0">
+                            <input type="hidden" name="code" value="{{.Code}}">
+                            <button type="submit" class="btn-danger" onclick="return confirm('Delete this link?')">Delete</button>
+                        </form>
+                    </div>
+                </div>
+                {{end}}
+            </div>
+            {{else}}
+            <div class="empty">No links created yet. Create your first one above.</div>
+            {{end}}
+        </div>
+    </div>
+
+    <!-- Change Admin Password Modal -->
+    <div class="modal-overlay" id="adminPwModal" onclick="if(event.target===this)closeModals()">
+        <div class="modal">
+            <h3>Change Admin Password</h3>
+            <form method="POST" action="/admin/change-admin-password">
+                <div class="form-group">
+                    <label>Current Password</label>
+                    <input type="password" name="current_password" placeholder="Enter current password" required>
+                </div>
+                <div class="form-group">
+                    <label>New Password</label>
+                    <input type="password" name="new_password" placeholder="Enter new password" required>
+                </div>
+                <div class="form-group">
+                    <label>Confirm New Password</label>
+                    <input type="password" name="confirm_password" placeholder="Confirm new password" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit">Update Password</button>
+                    <button type="button" class="btn-cancel" onclick="closeModals()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Change Link Password Modal -->
+    <div class="modal-overlay" id="linkPwModal" onclick="if(event.target===this)closeModals()">
+        <div class="modal">
+            <h3>Change Link Password</h3>
+            <p style="color:#666;font-size:14px;margin-bottom:20px">Code: <code id="linkPwCode" style="color:#6366f1"></code></p>
+            <form method="POST" action="/admin/change-link-password">
+                <input type="hidden" name="code" id="linkPwCodeInput">
+                <div class="form-group">
+                    <label>New Password</label>
+                    <input type="password" name="new_password" id="linkPwInput" placeholder="Enter new password" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit">Update Password</button>
+                    <button type="button" class="btn-cancel" onclick="closeModals()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="copy-toast" id="toast">Link copied!</div>
+
+    <script>
+        function copyLink(e, link) {
+            e.preventDefault();
+            navigator.clipboard.writeText(link);
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+        function closeModals() {
+            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+        }
+        function openChangePw(code) {
+            document.getElementById('linkPwCode').textContent = code;
+            document.getElementById('linkPwCodeInput').value = code;
+            document.getElementById('linkPwInput').value = '';
+            openModal('linkPwModal');
+        }
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModals(); });
+    </script>
+</body>
+</html>
