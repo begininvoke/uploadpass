@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -56,7 +56,7 @@ type Paste struct {
 
 func main() {
 	var err error
-	db, err = sql.Open("sqlite3", "./uploadpass.db")
+	db, err = sql.Open("sqlite", "./uploadpass.db")
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -1,0 +1,10 @@
+module uploadpass
+
+go 1.23.0
+
+toolchain go1.23.3
+
+require (
+	golang.org/x/crypto v0.31.0
+	modernc.org/sqlite v1.44.3
+)
