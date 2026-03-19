@@ -20,25 +20,39 @@ import (
 var (
 	db       *sql.DB
 	tmpl     *template.Template
-	sessions = &sessionStore{tokens: make(map[string]time.Time)}
+	sessions = &sessionStore{tokens: make(map[string]sessionData)}
 )
+
+type sessionData struct {
+	Expiry   time.Time
+	Username string
+}
 
 type sessionStore struct {
 	sync.RWMutex
-	tokens map[string]time.Time
+	tokens map[string]sessionData
 }
 
-func (s *sessionStore) set(token string) {
+func (s *sessionStore) set(token, username string) {
 	s.Lock()
 	defer s.Unlock()
-	s.tokens[token] = time.Now().Add(24 * time.Hour)
+	s.tokens[token] = sessionData{
+		Expiry:   time.Now().Add(24 * time.Hour),
+		Username: username,
+	}
 }
 
 func (s *sessionStore) valid(token string) bool {
 	s.RLock()
 	defer s.RUnlock()
-	exp, ok := s.tokens[token]
-	return ok && time.Now().Before(exp)
+	data, ok := s.tokens[token]
+	return ok && time.Now().Before(data.Expiry)
+}
+
+func (s *sessionStore) username(token string) string {
+	s.RLock()
+	defer s.RUnlock()
+	return s.tokens[token].Username
 }
 
 func (s *sessionStore) remove(token string) {
@@ -52,6 +66,12 @@ type Paste struct {
 	Code      string
 	Content   string
 	CreatedAt string
+	ExpiresAt string
+}
+
+type Admin struct {
+	ID       int
+	Username string
 }
 
 func main() {
@@ -82,12 +102,27 @@ func main() {
 	`); err != nil {
 		log.Fatal(err)
 	}
-	initAdminPassword()
+
+	if _, err = db.Exec(`
+		CREATE TABLE IF NOT EXISTS admins (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			username TEXT UNIQUE NOT NULL,
+			password TEXT NOT NULL,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)
+	`); err != nil {
+		log.Fatal(err)
+	}
+
+	migrateAdminPassword()
+	addCreatedByColumn()
+	go cleanupExpiredPastes()
 
 	tmpl = template.Must(template.ParseGlob(filepath.Join("templates", "*.html")))
 
 	http.HandleFunc("/", handleRoot)
 	http.HandleFunc("/admin", handleAdminLogin)
+	http.HandleFunc("/admin/register", handleAdminRegister)
 	http.HandleFunc("/admin/dashboard", handleDashboard)
 	http.HandleFunc("/admin/create", handleCreate)
 	http.HandleFunc("/admin/delete", handleDelete)
@@ -114,6 +149,14 @@ func isAuth(r *http.Request) bool {
 	return sessions.valid(c.Value)
 }
 
+func currentUser(r *http.Request) string {
+	c, err := r.Cookie("session")
+	if err != nil {
+		return ""
+	}
+	return sessions.username(c.Value)
+}
+
 func baseURL(r *http.Request) string {
 	scheme := "http"
 	if r.TLS != nil {
@@ -125,21 +168,44 @@ func baseURL(r *http.Request) string {
 	return fmt.Sprintf("%s://%s", scheme, r.Host)
 }
 
-func initAdminPassword() {
+func migrateAdminPassword() {
 	var count int
-	db.QueryRow("SELECT COUNT(*) FROM settings WHERE key = 'admin_password'").Scan(&count)
-	if count == 0 {
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
-		db.Exec("INSERT INTO settings (key, value) VALUES ('admin_password', ?)", string(hash))
+	db.QueryRow("SELECT COUNT(*) FROM admins").Scan(&count)
+	if count > 0 {
+		return
+	}
+	var hash string
+	err := db.QueryRow("SELECT value FROM settings WHERE key = 'admin_password'").Scan(&hash)
+	if err == nil {
+		db.Exec("INSERT OR IGNORE INTO admins (username, password) VALUES (?, ?)", "admin", hash)
+	} else {
+		h, _ := bcrypt.GenerateFromPassword([]byte("password"), bcrypt.DefaultCost)
+		db.Exec("INSERT OR IGNORE INTO admins (username, password) VALUES (?, ?)", "admin", string(h))
 	}
 }
 
-func checkAdminPassword(password string) bool {
+func addCreatedByColumn() {
+	db.Exec("ALTER TABLE pastes ADD COLUMN created_by TEXT NOT NULL DEFAULT ''")
+}
+
+func checkAdminLogin(username, password string) bool {
 	var hash string
-	if err := db.QueryRow("SELECT value FROM settings WHERE key = 'admin_password'").Scan(&hash); err != nil {
+	if err := db.QueryRow("SELECT password FROM admins WHERE username = ?", username).Scan(&hash); err != nil {
 		return false
 	}
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
+}
+
+func cleanupExpiredPastes() {
+	for {
+		res, err := db.Exec("DELETE FROM pastes WHERE created_at <= datetime('now', '-30 days')")
+		if err == nil {
+			if n, _ := res.RowsAffected(); n > 0 {
+				log.Printf("Auto-deleted %d expired link(s) (older than 30 days)", n)
+			}
+		}
+		time.Sleep(1 * time.Hour)
+	}
 }
 
 func handleRoot(w http.ResponseWriter, r *http.Request) {
@@ -160,13 +226,73 @@ func handleAdminLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !checkAdminPassword(r.FormValue("password")) {
-		tmpl.ExecuteTemplate(w, "login.html", map[string]string{"Error": "Invalid password"})
+	username := strings.TrimSpace(r.FormValue("username"))
+	password := r.FormValue("password")
+
+	if !checkAdminLogin(username, password) {
+		tmpl.ExecuteTemplate(w, "login.html", map[string]string{"Error": "Invalid username or password"})
 		return
 	}
 
 	token := randomCode(32)
-	sessions.set(token)
+	sessions.set(token, username)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   86400,
+	})
+	http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
+}
+
+func handleAdminRegister(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		if isAuth(r) {
+			http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
+			return
+		}
+		tmpl.ExecuteTemplate(w, "register.html", nil)
+		return
+	}
+
+	username := strings.TrimSpace(r.FormValue("username"))
+	password := r.FormValue("password")
+	confirm := r.FormValue("confirm_password")
+
+	if len(username) < 3 {
+		tmpl.ExecuteTemplate(w, "register.html", map[string]string{"Error": "Username must be at least 3 characters"})
+		return
+	}
+	if len(password) < 4 {
+		tmpl.ExecuteTemplate(w, "register.html", map[string]string{"Error": "Password must be at least 4 characters"})
+		return
+	}
+	if password != confirm {
+		tmpl.ExecuteTemplate(w, "register.html", map[string]string{"Error": "Passwords do not match"})
+		return
+	}
+
+	var exists int
+	db.QueryRow("SELECT COUNT(*) FROM admins WHERE username = ?", username).Scan(&exists)
+	if exists > 0 {
+		tmpl.ExecuteTemplate(w, "register.html", map[string]string{"Error": "Username already taken"})
+		return
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		tmpl.ExecuteTemplate(w, "register.html", map[string]string{"Error": "Server error"})
+		return
+	}
+
+	if _, err = db.Exec("INSERT INTO admins (username, password) VALUES (?, ?)", username, string(hash)); err != nil {
+		tmpl.ExecuteTemplate(w, "register.html", map[string]string{"Error": "Could not create account"})
+		return
+	}
+
+	token := randomCode(32)
+	sessions.set(token, username)
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",
 		Value:    token,
@@ -183,7 +309,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.Query("SELECT id, code, content, created_at FROM pastes ORDER BY created_at DESC")
+	rows, err := db.Query("SELECT id, code, content, created_at, datetime(created_at, '+30 days') FROM pastes WHERE created_by = ? ORDER BY created_at ASC", currentUser(r))
 	if err != nil {
 		http.Error(w, "Database error", 500)
 		return
@@ -193,13 +319,14 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
 	var pastes []Paste
 	for rows.Next() {
 		var p Paste
-		rows.Scan(&p.ID, &p.Code, &p.Content, &p.CreatedAt)
+		rows.Scan(&p.ID, &p.Code, &p.Content, &p.CreatedAt, &p.ExpiresAt)
 		pastes = append(pastes, p)
 	}
 
 	data := map[string]interface{}{
-		"Pastes":  pastes,
-		"BaseURL": baseURL(r),
+		"Pastes":   pastes,
+		"BaseURL":  baseURL(r),
+		"Username": currentUser(r),
 	}
 	if c, err := r.Cookie("flash_success"); err == nil {
 		data["Success"] = c.Value
@@ -232,8 +359,8 @@ func handleCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	code := randomCode(8)
-	if _, err = db.Exec("INSERT INTO pastes (code, content, password) VALUES (?, ?, ?)",
-		code, content, string(hash)); err != nil {
+	if _, err = db.Exec("INSERT INTO pastes (code, content, password, created_by) VALUES (?, ?, ?, ?)",
+		code, content, string(hash), currentUser(r)); err != nil {
 		http.Error(w, "Database error", 500)
 		return
 	}
@@ -247,7 +374,7 @@ func handleDelete(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/admin", http.StatusSeeOther)
 		return
 	}
-	db.Exec("DELETE FROM pastes WHERE code = ?", r.FormValue("code"))
+	db.Exec("DELETE FROM pastes WHERE code = ? AND created_by = ?", r.FormValue("code"), currentUser(r))
 	http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
 }
 
@@ -257,11 +384,12 @@ func handleChangeAdminPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	username := currentUser(r)
 	current := r.FormValue("current_password")
 	newPass := r.FormValue("new_password")
 	confirm := r.FormValue("confirm_password")
 
-	if !checkAdminPassword(current) {
+	if !checkAdminLogin(username, current) {
 		redirectWithMsg(w, r, "error", "Current password is incorrect")
 		return
 	}
@@ -279,8 +407,8 @@ func handleChangeAdminPassword(w http.ResponseWriter, r *http.Request) {
 		redirectWithMsg(w, r, "error", "Server error")
 		return
 	}
-	db.Exec("UPDATE settings SET value = ? WHERE key = 'admin_password'", string(hash))
-	redirectWithMsg(w, r, "success", "Admin password changed successfully")
+	db.Exec("UPDATE admins SET password = ? WHERE username = ?", string(hash), username)
+	redirectWithMsg(w, r, "success", "Password changed successfully")
 }
 
 func handleChangeLinkPassword(w http.ResponseWriter, r *http.Request) {
@@ -301,7 +429,7 @@ func handleChangeLinkPassword(w http.ResponseWriter, r *http.Request) {
 		redirectWithMsg(w, r, "error", "Server error")
 		return
 	}
-	res, _ := db.Exec("UPDATE pastes SET password = ? WHERE code = ?", string(hash), code)
+	res, _ := db.Exec("UPDATE pastes SET password = ? WHERE code = ? AND created_by = ?", string(hash), code, currentUser(r))
 	if n, _ := res.RowsAffected(); n == 0 {
 		redirectWithMsg(w, r, "error", "Link not found")
 		return
